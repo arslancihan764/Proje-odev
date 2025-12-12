@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AP Eleme Yarışı</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { font-family: sans-serif; background:#f4f4f4; text-align:center; padding:20px; }
+    .container { max-width:500px; margin:0 auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+    .btn { width:100%; padding:15px; margin-top:10px; font-size:18px; cursor:pointer; border-radius:5px; border:none; }
+    .correct { background:#d4edda !important; }
+    .wrong { background:#f8d7da !important; }
+    .hidden { display: none !important; }
+    .option { background:#eee; padding:15px; margin:10px 0; cursor:pointer; border-radius:5px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>🚀 AP YARIŞI</h2>
+
+  <div id="login">
+    <input id="name" placeholder="İsim Giriniz" style="padding:10px; width:80%;" />
+    <button class="btn" style="background:#007bff; color:white;" onclick="join()">Yarışmaya Katıl</button>
+    <br><br>
+    <button class="btn" style="background:#333; color:white; font-size:12px;" onclick="host()">Öğretmen Girişi</button>
+  </div>
+
+  <div id="wait" class="hidden">
+    <h3>Bekleniyor...</h3>
+    <p id="pCount">0 Kişi</p>
+    <div id="hostBtn" class="hidden">
+      <button class="btn" style="background:green; color:white;" onclick="start()">BAŞLAT</button>
+    </div>
+  </div>
+
+  <div id="game" class="hidden">
+    <h3 id="qText">Soru...</h3>
+    <div id="opts"></div>
+  </div>
+
+  <div id="result" class="hidden">
+    <h1 id="resTitle"></h1>
+    <p id="resMsg"></p>
+  </div>
+</div>
+
+<script>
+  const socket = io();
+  let qIdx = 0;
+  const qs = [
+    {q:"Emziren kadınlarda önerilmeyen yöntem?", o:["KOK","RİA","Kondom","POP"], a:0},
+    {q:"Doğum sonrası hormon ne zaman başlar?", o:["Hemen","6 hafta sonra","1 yıl","Asla"], a:1},
+    {q:"Gençlerde CYBE için en önemli yöntem?", o:["RİA","Kondom","Ligasyon","İmplant"], a:1},
+    {q:"Nullipar nedir?", o:["Doğum yapmamış","İkiz","Menopoz","Erkek"], a:0},
+    {q:"Acil kontrasepsiyon en etkilisi?", o:["KOK","Bakırlı RİA","Doğal","Takvim"], a:1},
+    {q:"Menopoz ortalama yaş?", o:["35","42","50","58"], a:2}
+  ];
+
+  function join(){
+    const n = document.getElementById("name").value;
+    if(!n) return alert("İsim yaz!");
+    socket.emit("joinGame", n);
+    toWait();
+  }
+  function host(){
+    document.getElementById("hostBtn").classList.remove("hidden");
+    toWait();
+    alert("Öğretmen modu devrede.");
+  }
+  function toWait(){
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("wait").classList.remove("hidden");
+  }
+  function start(){ socket.emit("hostStartGame"); }
+
+  socket.on("updatePlayerCount", c => document.getElementById("pCount").innerText = c + " Kişi");
+  
+  socket.on("gameStarted", () => {
+    document.getElementById("wait").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+    loadQ();
+  });
+
+  function loadQ(){
+    if(qIdx>=qs.length){ socket.emit("playerFinished"); return; }
+    document.getElementById("qText").innerText = qs[qIdx].q;
+    const d = document.getElementById("opts"); d.innerHTML="";
+    qs[qIdx].o.forEach((txt,i)=>{
+      const b=document.createElement("div");
+      b.className="option"; b.innerText=txt;
+      b.onclick=()=>check(i, qs[qIdx].a, b);
+      d.appendChild(b);
+    });
+  }
+
+  function check(sel, corr, el){
+    if(sel===corr){
+      el.classList.add("correct");
+      setTimeout(()=>{ qIdx++; loadQ(); },500);
+    } else {
+      el.classList.add("wrong");
+      socket.emit("playerEliminated");
+      end("ELENDİN", "Yanlış cevap.");
+    }
+  }
+
+  socket.on("gameOver", w => {
+    const myName = document.getElementById("name").value;
+    if(w===myName) {
+      end("KAZANDIN! 🏆", "Tebrikler!");
+      confetti();
+    } else {
+      end("BİTTİ", "Kazanan: " + w);
+    }
+  });
+
+  function end(t,m){
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("wait").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+    document.getElementById("resTitle").innerText=t;
+    document.getElementById("resMsg").innerText=m;
+  }
+</script>
+</body>
+</html>
+
