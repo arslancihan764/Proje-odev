@@ -2,128 +2,256 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AP Eleme Yarışı</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    body { font-family: sans-serif; background:#f4f4f4; text-align:center; padding:20px; }
-    .container { max-width:500px; margin:0 auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-    .btn { width:100%; padding:15px; margin-top:10px; font-size:18px; cursor:pointer; border-radius:5px; border:none; }
-    .correct { background:#d4edda !important; }
-    .wrong { background:#f8d7da !important; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f0f2f5; margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; color:#333; }
+    .container { width:100%; max-width:600px; background:white; padding:25px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.1); text-align: center; margin: 10px; }
+    
+    /* Butonlar */
+    .btn { width:100%; padding:15px; margin-top:10px; font-size:18px; font-weight:bold; cursor:pointer; border-radius:10px; border:none; transition:0.2s; }
+    .btn-blue { background:#007bff; color:white; }
+    .btn-green { background:#28a745; color:white; }
+    .btn-red { background:#dc3545; color:white; }
+    .btn-dark { background:#343a40; color:white; }
+    .btn:active { transform:scale(0.98); }
+
+    /* Input */
+    input { width:90%; padding:15px; border:2px solid #ddd; border-radius:10px; font-size:16px; text-align:center; margin-bottom:15px; outline:none; }
+    input:focus { border-color:#007bff; }
+
+    /* Oyun Alanı */
+    .question-box { background:#e9ecef; padding:20px; border-radius:10px; margin-bottom:20px; font-size:20px; font-weight:bold; }
+    .option { background:white; border:2px solid #ddd; padding:15px; margin:10px 0; border-radius:10px; cursor:pointer; font-size:18px; transition:0.2s; }
+    .option:hover { background:#f8f9fa; border-color:#aaa; }
+    
+    /* Admin Tablosu */
+    table { width:100%; border-collapse:collapse; margin-top:15px; font-size:14px; }
+    th, td { padding:10px; text-align:left; border-bottom:1px solid #ddd; }
+    th { background:#f8f9fa; }
+    .status-alive { color:#28a745; font-weight:bold; }
+    .status-dead { color:#dc3545; text-decoration:line-through; }
+    .status-win { color:#ffc107; font-weight:bold; }
+
     .hidden { display: none !important; }
-    .option { background:#eee; padding:15px; margin:10px 0; cursor:pointer; border-radius:5px; }
+    .badge { display:inline-block; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; background:#eee; }
   </style>
 </head>
 <body>
+
 <div class="container">
-  <h2>🚀 AP YARIŞI</h2>
-
-  <div id="login">
-    <input id="name" placeholder="İsim Giriniz" style="padding:10px; width:80%;" />
-    <button class="btn" style="background:#007bff; color:white;" onclick="join()">Yarışmaya Katıl</button>
-    <br><br>
-    <button class="btn" style="background:#333; color:white; font-size:12px;" onclick="host()">Öğretmen Girişi</button>
-  </div>
-
-  <div id="wait" class="hidden">
-    <h3>Bekleniyor...</h3>
-    <p id="pCount">0 Kişi</p>
-    <div id="hostBtn" class="hidden">
-      <button class="btn" style="background:green; color:white;" onclick="start()">BAŞLAT</button>
+  
+  <!-- 1. GİRİŞ EKRANI -->
+  <div id="screen-login">
+    <h2>🚀 AP ELEME YARIŞI</h2>
+    <p>Adını yaz ve yarışmaya katıl!</p>
+    <input id="username" placeholder="Adınız Soyadınız" />
+    <button class="btn btn-blue" onclick="joinGame()">ÖĞRENCİ OLARAK KATIL</button>
+    <div style="margin-top:30px; border-top:1px solid #eee; padding-top:20px;">
+      <button class="btn btn-dark" style="font-size:14px; padding:10px;" onclick="joinAdmin()">Öğretmen Girişi (Yönetici)</button>
     </div>
   </div>
 
-  <div id="game" class="hidden">
-    <h3 id="qText">Soru...</h3>
-    <div id="opts"></div>
+  <!-- 2. BEKLEME EKRANI (Öğrenci) -->
+  <div id="screen-wait" class="hidden">
+    <h3>⏳ Hazır Ol!</h3>
+    <p>Öğretmen oyunu başlattığında sorular otomatik açılacak.</p>
+    <div class="badge">Bağlı Kişi Sayısı: <span id="player-count">0</span></div>
+    <br><br>
+    <img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" width="150" style="border-radius:10px;">
   </div>
 
-  <div id="result" class="hidden">
-    <h1 id="resTitle"></h1>
-    <p id="resMsg"></p>
+  <!-- 3. ÖĞRETMEN PANELİ (Admin) -->
+  <div id="screen-admin" class="hidden">
+    <h3>👨‍🏫 ÖĞRETMEN PANELİ</h3>
+    <button id="start-btn" class="btn btn-green" onclick="startGame()">YARIŞI BAŞLAT 🏁</button>
+    <div style="margin-top:10px; text-align:left; max-height:400px; overflow-y:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>İsim</th>
+            <th>Durum</th>
+            <th>Soru</th>
+          </tr>
+        </thead>
+        <tbody id="admin-table-body">
+          <!-- Oyuncular buraya gelecek -->
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- 4. OYUN EKRANI (Soru) -->
+  <div id="screen-game" class="hidden">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:bold; color:#666;">
+      <span id="q-counter">Soru 1</span>
+      <span>Hızlı Ol!</span>
+    </div>
+    <div id="question-text" class="question-box">Soru Yükleniyor...</div>
+    <div id="options-area"></div>
+  </div>
+
+  <!-- 5. ELENME EKRANI -->
+  <div id="screen-eliminated" class="hidden">
+    <h1 style="color:#dc3545;">ELENDİN! 😢</h1>
+    <p>Yanlış cevap verdin.</p>
+    <p>Diğerleri hala yarışıyor, ekranı kapatma, kazananı bekle...</p>
+  </div>
+
+  <!-- 6. KAZANMA / BİTİŞ EKRANI -->
+  <div id="screen-result" class="hidden">
+    <h1 id="winner-title" style="color:#28a745;"></h1>
+    <p id="winner-msg"></p>
+    <button class="btn btn-blue" onclick="location.reload()">Tekrar Oyna</button>
+  </div>
+
 </div>
 
 <script>
   const socket = io();
-  let qIdx = 0;
-  const qs = [
-    {q:"Emziren kadınlarda önerilmeyen yöntem?", o:["KOK","RİA","Kondom","POP"], a:0},
-    {q:"Doğum sonrası hormon ne zaman başlar?", o:["Hemen","6 hafta sonra","1 yıl","Asla"], a:1},
-    {q:"Gençlerde CYBE için en önemli yöntem?", o:["RİA","Kondom","Ligasyon","İmplant"], a:1},
-    {q:"Nullipar nedir?", o:["Doğum yapmamış","İkiz","Menopoz","Erkek"], a:0},
-    {q:"Acil kontrasepsiyon en etkilisi?", o:["KOK","Bakırlı RİA","Doğal","Takvim"], a:1},
-    {q:"Menopoz ortalama yaş?", o:["35","42","50","58"], a:2}
+  let myRole = "player";
+  
+  // SORULAR (Client sadece görsel olarak bunları basacak, kontrol sunucuda)
+  const questions = [
+    { q: "Emziren kadınlarda önerilmeyen yöntem?", options: ["KOK", "RİA", "Kondom", "POP"] },
+    { q: "Doğum sonrası hormonal yöntem ne zaman başlanabilir?", options: ["Hemen", "6 hafta sonra", "1 yıl sonra", "Asla"] },
+    { q: "Gençlerde CYBE için en önemli korunma yöntemi?", options: ["RİA", "Kondom", "Ligasyon", "İmplant"] },
+    { q: "Nullipar nedir?", options: ["Doğum yapmamış", "İkiz doğurmuş", "Menopozda", "Erkek partner"] },
+    { q: "Acil kontrasepsiyon en etkilisi?", options: ["KOK", "Bakırlı RİA", "Doğal", "Takvim yöntemi"] },
+    { q: "Menopoz ortalama kaç yaş?", options: ["35", "42", "50", "58"] },
+    { q: "AP Projesi başarıyla tamamlandı mı?", options: ["Hayır", "Belki", "EVET!", "Sanmıyorum"] }
   ];
 
-  function join(){
-    const n = document.getElementById("name").value;
-    if(!n) return alert("İsim yaz!");
-    socket.emit("joinGame", n);
-    toWait();
+  // --- GİRİŞ İŞLEMLERİ ---
+  function joinGame() {
+    const name = document.getElementById("username").value;
+    if(!name) return alert("Lütfen ismini yaz!");
+    myRole = "player";
+    socket.emit("joinGame", name);
+    showScreen("screen-wait");
   }
-  function host(){
-    document.getElementById("hostBtn").classList.remove("hidden");
-    toWait();
-    alert("Öğretmen modu devrede.");
-  }
-  function toWait(){
-    document.getElementById("login").classList.add("hidden");
-    document.getElementById("wait").classList.remove("hidden");
-  }
-  function start(){ socket.emit("hostStartGame"); }
 
-  socket.on("updatePlayerCount", c => document.getElementById("pCount").innerText = c + " Kişi");
-  
-  socket.on("gameStarted", () => {
-    document.getElementById("wait").classList.add("hidden");
-    document.getElementById("game").classList.remove("hidden");
-    loadQ();
-  });
+  function joinAdmin() {
+    myRole = "admin";
+    socket.emit("joinAsAdmin");
+    showScreen("screen-admin");
+  }
 
-  function loadQ(){
-    if(qIdx>=qs.length){ socket.emit("playerFinished"); return; }
-    document.getElementById("qText").innerText = qs[qIdx].q;
-    const d = document.getElementById("opts"); d.innerHTML="";
-    qs[qIdx].o.forEach((txt,i)=>{
-      const b=document.createElement("div");
-      b.className="option"; b.innerText=txt;
-      b.onclick=()=>check(i, qs[qIdx].a, b);
-      d.appendChild(b);
+  // --- ADMIN (ÖĞRETMEN) OLAYLARI ---
+  function startGame() {
+    socket.emit("startGame");
+    document.getElementById("start-btn").innerText = "Yarış Başladı... 🚀";
+    document.getElementById("start-btn").disabled = true;
+    document.getElementById("start-btn").style.background = "#555";
+  }
+
+  socket.on("adminData", (data) => {
+    if(myRole !== "admin") return;
+    
+    const tbody = document.getElementById("admin-table-body");
+    tbody.innerHTML = "";
+    
+    // Puanlamaya göre (soru sayısına göre) sırala
+    const sortedPlayers = data.players.sort((a,b) => b.currentQuestionIndex - a.currentQuestionIndex);
+
+    sortedPlayers.forEach(p => {
+      let statusHtml = '<span class="status-alive">Yarışıyor</span>';
+      if(p.eliminated) statusHtml = '<span class="status-dead">Elendi</span>';
+      if(p.finished) statusHtml = '<span class="status-win">BİTİRDİ!</span>';
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${p.name}</strong></td>
+        <td>${statusHtml}</td>
+        <td>${p.currentQuestionIndex} / ${data.totalQuestions}</td>
+      `;
+      tbody.appendChild(tr);
     });
-  }
+  });
 
-  function check(sel, corr, el){
-    if(sel===corr){
-      el.classList.add("correct");
-      setTimeout(()=>{ qIdx++; loadQ(); },500);
-    } else {
-      el.classList.add("wrong");
-      socket.emit("playerEliminated");
-      end("ELENDİN", "Yanlış cevap.");
-    }
-  }
+  // --- OYUNCU (ÖĞRENCİ) OLAYLARI ---
+  socket.on("playerCountUpdate", (count) => {
+    document.getElementById("player-count").innerText = count;
+  });
 
-  socket.on("gameOver", w => {
-    const myName = document.getElementById("name").value;
-    if(w===myName) {
-      end("KAZANDIN! 🏆", "Tebrikler!");
-      confetti();
-    } else {
-      end("BİTTİ", "Kazanan: " + w);
+  socket.on("gameStarted", () => {
+    if(myRole === "player") {
+      showScreen("screen-game");
+      loadQuestion(0);
     }
   });
 
-  function end(t,m){
-    document.getElementById("game").classList.add("hidden");
-    document.getElementById("wait").classList.add("hidden");
-    document.getElementById("result").classList.remove("hidden");
-    document.getElementById("resTitle").innerText=t;
-    document.getElementById("resMsg").innerText=m;
+  socket.on("nextQuestion", (index) => {
+    loadQuestion(index);
+  });
+
+  socket.on("youAreEliminated", () => {
+    showScreen("screen-eliminated");
+  });
+
+  socket.on("playerFinishedLate", () => {
+    showScreen("screen-result");
+    document.getElementById("winner-title").innerText = "Tebrikler!";
+    document.getElementById("winner-msg").innerText = "Tüm soruları bildin ama birinci olamadın.";
+  });
+
+  socket.on("gameOver", (data) => {
+    // Sadece admin ve elenenler veya bitirenler için final ekranı
+    // Eğer oyun oynuyorsan ve oyun bittiyse (birisi kazandıysa)
+    if(myRole === "admin") {
+      alert("Oyun Bitti! Kazanan: " + data.winnerName);
+      return; 
+    }
+
+    showScreen("screen-result");
+    if(data.winnerName) {
+      document.getElementById("winner-title").innerText = "KAZANAN BELLİ OLDU!";
+      document.getElementById("winner-msg").innerText = "🏆 ŞAMPİYON: " + data.winnerName;
+      confetti({ particleCount: 300, spread: 100, origin: { y: 0.6 } });
+    }
+  });
+
+  // --- YARDIMCI FONKSİYONLAR ---
+  function loadQuestion(index) {
+    if(index >= questions.length) return; // Hata önleyici
+
+    const q = questions[index];
+    document.getElementById("q-counter").innerText = "Soru " + (index + 1);
+    document.getElementById("question-text").innerText = q.q;
+    
+    const area = document.getElementById("options-area");
+    area.innerHTML = "";
+
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement("div");
+      btn.className = "option";
+      btn.innerText = opt;
+      btn.onclick = () => {
+        // Cevabı gönder
+        socket.emit("submitAnswer", i);
+        // Tıklamayı engelle (çift basmasın)
+        area.style.pointerEvents = "none";
+        btn.style.background = "#ffeeba"; // Bekleme rengi
+      };
+      area.appendChild(btn);
+    });
+    // Alanı tekrar tıklanabilir yap (yeni soru gelince)
+    area.style.pointerEvents = "auto";
   }
+
+  function showScreen(id) {
+    // Tüm ekranları gizle
+    document.querySelectorAll(".container > div").forEach(div => div.classList.add("hidden"));
+    // İstenilen ekranı aç
+    document.getElementById(id).classList.remove("hidden");
+  }
+
 </script>
+
 </body>
 </html>
+
+
 
