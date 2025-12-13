@@ -3,117 +3,201 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AP Eleme Yarışı</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+  <title>AP Elite</title>
+  
+  <!-- Soket & Efektler -->
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <!-- Font: Manrope (Modern & Geometrik) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Manrope', 'sans-serif'] },
+          colors: {
+            gold: '#D4AF37',
+            dark: '#050505',
+            panel: '#111111'
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f0f2f5; margin:0; padding:0; display:flex; justify-content:center; align-items:center; min-height:100vh; color:#333; }
-    .container { width:100%; max-width:600px; background:white; padding:25px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.1); text-align: center; margin: 10px; }
+    body { background-color: #050505; color: #e5e5e5; }
     
-    /* Butonlar */
-    .btn { width:100%; padding:15px; margin-top:10px; font-size:18px; font-weight:bold; cursor:pointer; border-radius:10px; border:none; transition:0.2s; }
-    .btn-blue { background:#007bff; color:white; }
-    .btn-green { background:#28a745; color:white; }
-    .btn-red { background:#dc3545; color:white; }
-    .btn-dark { background:#343a40; color:white; }
-    .btn:active { transform:scale(0.98); }
+    /* İnce, zarif geçişler */
+    .fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Input */
-    input { width:90%; padding:15px; border:2px solid #ddd; border-radius:10px; font-size:16px; text-align:center; margin-bottom:15px; outline:none; }
-    input:focus { border-color:#007bff; }
+    /* Lüks input stili */
+    .elite-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #333;
+      color: white;
+      text-align: center;
+      transition: all 0.5s ease;
+      font-weight: 200;
+      letter-spacing: 1px;
+    }
+    .elite-input:focus {
+      outline: none;
+      border-bottom: 1px solid #D4AF37;
+      letter-spacing: 2px;
+    }
 
-    /* Oyun Alanı */
-    .question-box { background:#e9ecef; padding:20px; border-radius:10px; margin-bottom:20px; font-size:20px; font-weight:bold; }
-    .option { background:white; border:2px solid #ddd; padding:15px; margin:10px 0; border-radius:10px; cursor:pointer; font-size:18px; transition:0.2s; }
-    .option:hover { background:#f8f9fa; border-color:#aaa; }
-    
-    /* Admin Tablosu */
-    table { width:100%; border-collapse:collapse; margin-top:15px; font-size:14px; }
-    th, td { padding:10px; text-align:left; border-bottom:1px solid #ddd; }
-    th { background:#f8f9fa; }
-    .status-alive { color:#28a745; font-weight:bold; }
-    .status-dead { color:#dc3545; text-decoration:line-through; }
-    .status-win { color:#ffc107; font-weight:bold; }
+    /* Minimal Buton */
+    .elite-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #888;
+      transition: all 0.4s ease;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+    .elite-btn:hover {
+      background: #D4AF37;
+      border-color: #D4AF37;
+      color: black;
+      transform: translateY(-2px);
+    }
+
+    /* Admin Listesi */
+    .player-row { border-bottom: 1px solid #1a1a1a; transition: 0.3s; }
+    .player-row:hover { background: #0f0f0f; }
+
+    /* Scrollbar Gizle */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #050505; }
+    ::-webkit-scrollbar-thumb { background: #333; }
 
     .hidden { display: none !important; }
-    .badge { display:inline-block; padding:5px 10px; border-radius:20px; font-size:12px; font-weight:bold; background:#eee; }
   </style>
 </head>
-<body>
+<body class="h-screen flex flex-col items-center justify-center p-6 overflow-hidden relative">
 
-<div class="container">
-  
-  <!-- 1. GİRİŞ EKRANI -->
-  <div id="screen-login">
-    <h2>🚀 AP ELEME YARIŞI</h2>
-    <p>Adını yaz ve yarışmaya katıl!</p>
-    <input id="username" placeholder="Adınız Soyadınız" />
-    <button class="btn btn-blue" onclick="joinGame()">ÖĞRENCİ OLARAK KATIL</button>
-    <div style="margin-top:30px; border-top:1px solid #eee; padding-top:20px;">
-      <button class="btn btn-dark" style="font-size:14px; padding:10px;" onclick="joinAdmin()">Öğretmen Girişi (Yönetici)</button>
+  <!-- Arka Plan Soyut Halka (Çok silik) -->
+  <div class="absolute w-[800px] h-[800px] border border-white/5 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-20"></div>
+  <div class="absolute w-[600px] h-[600px] border border-white/5 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30"></div>
+
+  <div class="w-full max-w-2xl relative z-10">
+
+    <!-- 1. GİRİŞ EKRANI -->
+    <div id="screen-login" class="text-center fade-in">
+      <div class="mb-12">
+        <h1 class="text-5xl font-extralight tracking-[0.2em] text-white mb-2">AP<span class="font-bold text-gold">PRO</span></h1>
+        <p class="text-xs text-neutral-500 uppercase tracking-widest">Minimalist Bilgi Yarışması</p>
+      </div>
+
+      <div class="space-y-8 max-w-xs mx-auto">
+        <input id="username" type="text" placeholder="İSİM GİRİNİZ" class="elite-input w-full py-4 text-xl placeholder-neutral-700">
+        
+        <button onclick="joinGame()" class="elite-btn w-full py-4 rounded-sm font-semibold">
+          Yarışmaya Başla
+        </button>
+        
+        <div class="pt-8">
+          <button onclick="joinAdmin()" class="text-[10px] text-neutral-700 hover:text-neutral-400 transition tracking-widest uppercase">
+            Yönetici Paneli
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- 2. BEKLEME EKRANI (Öğrenci) -->
-  <div id="screen-wait" class="hidden">
-    <h3>⏳ Hazır Ol!</h3>
-    <p>Öğretmen oyunu başlattığında sorular otomatik açılacak.</p>
-    <div class="badge">Bağlı Kişi Sayısı: <span id="player-count">0</span></div>
-    <br><br>
-    <img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" width="150" style="border-radius:10px;">
-  </div>
-
-  <!-- 3. ÖĞRETMEN PANELİ (Admin) -->
-  <div id="screen-admin" class="hidden">
-    <h3>👨‍🏫 ÖĞRETMEN PANELİ</h3>
-    <button id="start-btn" class="btn btn-green" onclick="startGame()">YARIŞI BAŞLAT 🏁</button>
-    <div style="margin-top:10px; text-align:left; max-height:400px; overflow-y:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>İsim</th>
-            <th>Durum</th>
-            <th>Soru</th>
-          </tr>
-        </thead>
-        <tbody id="admin-table-body">
-          <!-- Oyuncular buraya gelecek -->
-        </tbody>
-      </table>
+    <!-- 2. BEKLEME EKRANI -->
+    <div id="screen-wait" class="hidden text-center fade-in">
+      <div class="w-16 h-16 border-t-2 border-r-2 border-gold rounded-full animate-spin mx-auto mb-8 opacity-80"></div>
+      <h2 class="text-2xl font-light tracking-wide mb-2">BEKLENİYOR</h2>
+      <p class="text-neutral-500 text-sm mb-8">Yönetici onayı bekleniyor...</p>
+      
+      <div class="inline-flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span class="text-xs text-neutral-400">BAĞLI: <span id="player-count" class="text-white">0</span></span>
+      </div>
     </div>
-  </div>
 
-  <!-- 4. OYUN EKRANI (Soru) -->
-  <div id="screen-game" class="hidden">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:bold; color:#666;">
-      <span id="q-counter">Soru 1</span>
-      <span>Hızlı Ol!</span>
+    <!-- 3. ADMIN PANELİ -->
+    <div id="screen-admin" class="hidden w-full h-[80vh] flex flex-col fade-in bg-panel border border-white/5 rounded-xl overflow-hidden p-8">
+      <div class="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
+        <div>
+          <h2 class="text-xl font-light tracking-widest text-gold">KONTROL PANELİ</h2>
+          <p class="text-xs text-neutral-500 mt-1">CANLI YAYIN AKIŞI</p>
+        </div>
+        <button id="start-btn" onclick="startGame()" class="elite-btn px-6 py-3 border-gold/50 text-gold hover:bg-gold hover:text-black">
+          BAŞLAT
+        </button>
+      </div>
+
+      <!-- Header -->
+      <div class="grid grid-cols-12 gap-4 text-[10px] text-neutral-600 uppercase tracking-widest mb-4 px-4">
+        <div class="col-span-1 text-center">#</div>
+        <div class="col-span-5">İsim</div>
+        <div class="col-span-3 text-center">Durum</div>
+        <div class="col-span-3 text-right">İlerleme</div>
+      </div>
+
+      <!-- Liste -->
+      <div id="admin-list" class="flex-1 overflow-y-auto space-y-1">
+        <!-- JS ile dolacak -->
+      </div>
     </div>
-    <div id="question-text" class="question-box">Soru Yükleniyor...</div>
-    <div id="options-area"></div>
-  </div>
 
-  <!-- 5. ELENME EKRANI -->
-  <div id="screen-eliminated" class="hidden">
-    <h1 style="color:#dc3545;">ELENDİN! 😢</h1>
-    <p>Yanlış cevap verdin.</p>
-    <p>Diğerleri hala yarışıyor, ekranı kapatma, kazananı bekle...</p>
-  </div>
+    <!-- 4. OYUN EKRANI -->
+    <div id="screen-game" class="hidden w-full fade-in">
+      <!-- Üst Bilgi -->
+      <div class="flex justify-between items-center mb-12 border-b border-white/10 pb-4">
+        <span id="q-counter" class="text-xs font-bold text-gold tracking-widest">01 / 07</span>
+        <div class="w-32 h-[1px] bg-neutral-800">
+          <div id="progress-bar" class="h-full bg-gold transition-all duration-700" style="width: 0%"></div>
+        </div>
+      </div>
 
-  <!-- 6. KAZANMA / BİTİŞ EKRANI -->
-  <div id="screen-result" class="hidden">
-    <h1 id="winner-title" style="color:#28a745;"></h1>
-    <p id="winner-msg"></p>
-    <button class="btn btn-blue" onclick="location.reload()">Tekrar Oyna</button>
-  </div>
+      <!-- Soru -->
+      <div id="question-text" class="text-2xl md:text-3xl font-light leading-relaxed mb-12 text-center min-h-[120px] flex items-center justify-center">
+        Yükleniyor...
+      </div>
 
-</div>
+      <!-- Seçenekler -->
+      <div id="options-area" class="grid grid-cols-1 gap-4 max-w-lg mx-auto">
+        <!-- JS ile dolacak -->
+      </div>
+    </div>
+
+    <!-- 5. ELENME EKRANI -->
+    <div id="screen-eliminated" class="hidden text-center fade-in">
+      <h1 class="text-6xl font-thin text-neutral-800 mb-4 tracking-widest">ELENDİN</h1>
+      <div class="w-12 h-[1px] bg-red-900 mx-auto mb-6"></div>
+      <p class="text-neutral-500 text-sm tracking-wide">Yarışma devam ediyor, lütfen bekleyiniz.</p>
+    </div>
+
+    <!-- 6. SONUÇ EKRANI -->
+    <div id="screen-result" class="hidden text-center fade-in">
+      <div id="result-icon" class="text-4xl mb-6 text-gold animate-bounce"></div>
+      <h2 id="winner-title" class="text-3xl font-light tracking-[0.3em] mb-4 text-white uppercase"></h2>
+      <p id="winner-msg" class="text-neutral-400 text-sm font-light mb-12 tracking-wide"></p>
+      
+      <button onclick="location.reload()" class="elite-btn px-12 py-4">
+        Sistemi Yenile
+      </button>
+    </div>
+
+  </div>
 
 <script>
   const socket = io();
   let myRole = "player";
-  
-  // SORULAR (Client sadece görsel olarak bunları basacak, kontrol sunucuda)
+  let totalQuestions = 7;
+
+  // --- SORULAR (Server yönetir ama client gösterir) ---
   const questions = [
     { q: "Emziren kadınlarda önerilmeyen yöntem?", options: ["KOK", "RİA", "Kondom", "POP"] },
     { q: "Doğum sonrası hormonal yöntem ne zaman başlanabilir?", options: ["Hemen", "6 hafta sonra", "1 yıl sonra", "Asla"] },
@@ -124,10 +208,9 @@
     { q: "AP Projesi başarıyla tamamlandı mı?", options: ["Hayır", "Belki", "EVET!", "Sanmıyorum"] }
   ];
 
-  // --- GİRİŞ İŞLEMLERİ ---
   function joinGame() {
     const name = document.getElementById("username").value;
-    if(!name) return alert("Lütfen ismini yaz!");
+    if(!name) return;
     myRole = "player";
     socket.emit("joinGame", name);
     showScreen("screen-wait");
@@ -139,43 +222,50 @@
     showScreen("screen-admin");
   }
 
-  // --- ADMIN (ÖĞRETMEN) OLAYLARI ---
   function startGame() {
     socket.emit("startGame");
-    document.getElementById("start-btn").innerText = "Yarış Başladı... 🚀";
-    document.getElementById("start-btn").disabled = true;
-    document.getElementById("start-btn").style.background = "#555";
+    const btn = document.getElementById("start-btn");
+    btn.innerText = "YAYINDA";
+    btn.style.borderColor = "#22c55e"; // Yeşil
+    btn.style.color = "#22c55e";
+    btn.disabled = true;
   }
 
+  // --- ADMIN UPDATE ---
   socket.on("adminData", (data) => {
     if(myRole !== "admin") return;
+    totalQuestions = data.totalQuestions;
     
-    const tbody = document.getElementById("admin-table-body");
-    tbody.innerHTML = "";
+    const list = document.getElementById("admin-list");
+    list.innerHTML = "";
     
-    // Puanlamaya göre (soru sayısına göre) sırala
     const sortedPlayers = data.players.sort((a,b) => b.currentQuestionIndex - a.currentQuestionIndex);
 
-    sortedPlayers.forEach(p => {
-      let statusHtml = '<span class="status-alive">Yarışıyor</span>';
-      if(p.eliminated) statusHtml = '<span class="status-dead">Elendi</span>';
-      if(p.finished) statusHtml = '<span class="status-win">BİTİRDİ!</span>';
+    sortedPlayers.forEach((p, index) => {
+      let statusDot = `<div class="w-2 h-2 rounded-full bg-green-500 mx-auto shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>`;
+      let opacity = "opacity-100";
+      
+      if(p.eliminated) {
+        statusDot = `<div class="w-2 h-2 rounded-full bg-red-900 mx-auto"></div>`;
+        opacity = "opacity-40";
+      } else if(p.finished) {
+        statusDot = `<div class="w-2 h-2 rounded-full bg-gold mx-auto shadow-[0_0_10px_rgba(212,175,55,0.5)]"></div>`;
+      }
 
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>${p.name}</strong></td>
-        <td>${statusHtml}</td>
-        <td>${p.currentQuestionIndex} / ${data.totalQuestions}</td>
+      const item = document.createElement("div");
+      item.className = `grid grid-cols-12 gap-4 items-center px-4 py-3 player-row ${opacity}`;
+      item.innerHTML = `
+        <div class="col-span-1 text-center text-xs text-neutral-600">${index + 1}</div>
+        <div class="col-span-5 font-light tracking-wide text-sm truncate">${p.name}</div>
+        <div class="col-span-3 text-center">${statusDot}</div>
+        <div class="col-span-3 text-right text-xs text-neutral-500 font-mono">${p.currentQuestionIndex}/${totalQuestions}</div>
       `;
-      tbody.appendChild(tr);
+      list.appendChild(item);
     });
   });
 
-  // --- OYUNCU (ÖĞRENCİ) OLAYLARI ---
-  socket.on("playerCountUpdate", (count) => {
-    document.getElementById("player-count").innerText = count;
-  });
-
+  socket.on("playerCountUpdate", (c) => document.getElementById("player-count").innerText = c);
+  
   socket.on("gameStarted", () => {
     if(myRole === "player") {
       showScreen("screen-game");
@@ -183,75 +273,98 @@
     }
   });
 
-  socket.on("nextQuestion", (index) => {
-    loadQuestion(index);
-  });
-
+  socket.on("nextQuestion", (idx) => loadQuestion(idx));
+  
   socket.on("youAreEliminated", () => {
     showScreen("screen-eliminated");
   });
 
   socket.on("playerFinishedLate", () => {
-    showScreen("screen-result");
-    document.getElementById("winner-title").innerText = "Tebrikler!";
-    document.getElementById("winner-msg").innerText = "Tüm soruları bildin ama birinci olamadın.";
+    showResult("TAMAMLANDI", "Yarışmayı bitirdiniz ancak sıralamaya giremediniz.", "✨");
   });
 
   socket.on("gameOver", (data) => {
-    // Sadece admin ve elenenler veya bitirenler için final ekranı
-    // Eğer oyun oynuyorsan ve oyun bittiyse (birisi kazandıysa)
     if(myRole === "admin") {
-      alert("Oyun Bitti! Kazanan: " + data.winnerName);
-      return; 
+      // Admin için soft uyarı, alert yerine buton rengini değiştir
+      document.getElementById("start-btn").innerText = "BİTTİ";
+      document.getElementById("start-btn").style.borderColor = "#ef4444";
+      document.getElementById("start-btn").style.color = "#ef4444";
+      return;
     }
 
-    showScreen("screen-result");
-    if(data.winnerName) {
-      document.getElementById("winner-title").innerText = "KAZANAN BELLİ OLDU!";
-      document.getElementById("winner-msg").innerText = "🏆 ŞAMPİYON: " + data.winnerName;
-      confetti({ particleCount: 300, spread: 100, origin: { y: 0.6 } });
+    if(data.noWinner) {
+      showResult("SONUÇ YOK", "Kazanan çıkmadı.", "💀");
+    } else {
+      const amIWinner = (document.getElementById("username").value === data.winnerName);
+      if (amIWinner) {
+        showResult("ŞAMPİYON", data.winnerName, "👑");
+        // Altın konfetiler
+        var duration = 3 * 1000;
+        var end = Date.now() + duration;
+        (function frame() {
+          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#D4AF37', '#ffffff'] });
+          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#D4AF37', '#ffffff'] });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        }());
+      } else {
+        showResult("KAZANAN", data.winnerName, "👏");
+      }
     }
   });
 
-  // --- YARDIMCI FONKSİYONLAR ---
   function loadQuestion(index) {
-    if(index >= questions.length) return; // Hata önleyici
-
-    const q = questions[index];
-    document.getElementById("q-counter").innerText = "Soru " + (index + 1);
-    document.getElementById("question-text").innerText = q.q;
+    if(index >= questions.length) return;
     
+    // Progress update
+    const percent = ((index) / questions.length) * 100;
+    document.getElementById("progress-bar").style.width = percent + "%";
+    document.getElementById("q-counter").innerText = (index + 1).toString().padStart(2, '0') + " / " + questions.length.toString().padStart(2, '0');
+
+    // Fade effect for text
+    const qText = document.getElementById("question-text");
+    qText.style.opacity = 0;
+    setTimeout(() => {
+      qText.innerText = questions[index].q;
+      qText.style.opacity = 1;
+    }, 300);
+
     const area = document.getElementById("options-area");
     area.innerHTML = "";
 
-    q.options.forEach((opt, i) => {
-      const btn = document.createElement("div");
-      btn.className = "option";
-      btn.innerText = opt;
+    questions[index].options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      // Elit buton stili
+      btn.className = "w-full text-left px-6 py-5 border border-white/10 hover:border-gold hover:bg-gold/5 transition-all duration-300 text-sm md:text-base font-light tracking-wide text-neutral-300 hover:text-white group";
+      
+      btn.innerHTML = `<span class="inline-block w-6 text-neutral-600 group-hover:text-gold mr-2 text-xs font-mono">0${i+1}</span> ${opt}`;
+      
       btn.onclick = () => {
-        // Cevabı gönder
         socket.emit("submitAnswer", i);
-        // Tıklamayı engelle (çift basmasın)
         area.style.pointerEvents = "none";
-        btn.style.background = "#ffeeba"; // Bekleme rengi
+        // Seçim efekti
+        btn.classList.add("bg-white", "text-black", "border-white");
+        btn.classList.remove("text-neutral-300", "hover:bg-gold/5", "hover:border-gold");
       };
       area.appendChild(btn);
     });
-    // Alanı tekrar tıklanabilir yap (yeni soru gelince)
     area.style.pointerEvents = "auto";
   }
 
-  function showScreen(id) {
-    // Tüm ekranları gizle
-    document.querySelectorAll(".container > div").forEach(div => div.classList.add("hidden"));
-    // İstenilen ekranı aç
-    document.getElementById(id).classList.remove("hidden");
+  function showResult(title, msg, icon) {
+    showScreen("screen-result");
+    document.getElementById("winner-title").innerText = title;
+    document.getElementById("winner-msg").innerText = msg;
+    document.getElementById("result-icon").innerText = icon;
   }
 
+  function showScreen(id) {
+    document.querySelectorAll(".max-w-2xl > div").forEach(div => div.classList.add("hidden"));
+    const target = document.getElementById(id);
+    target.classList.remove("hidden");
+    target.classList.add("fade-in");
+  }
 </script>
-
 </body>
 </html>
-
 
 
