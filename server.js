@@ -4,11 +4,13 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: { origin: "*" }
+});
 
 app.use(express.static("public"));
 
-// --- OYUN AYARLARI VE SORULAR ---
+// --- SORULAR ---
 const questions = [
   { q: "Emziren kadınlarda önerilmeyen yöntem?", options: ["KOK", "RİA", "Kondom", "POP"], answer: 0 },
   { q: "Doğum sonrası hormonal yöntem ne zaman başlanabilir?", options: ["Hemen", "6 hafta sonra", "1 yıl sonra", "Asla"], answer: 1 },
@@ -19,14 +21,13 @@ const questions = [
   { q: "AP Projesi başarıyla tamamlandı mı?", options: ["Hayır", "Belki", "EVET!", "Sanmıyorum"], answer: 2 }
 ];
 
-// Oyuncu Verileri
 let players = {}; 
-let gameStatus = "waiting"; // waiting, playing, finished
+let gameStatus = "waiting"; 
 let winner = null;
 
 io.on("connection", (socket) => {
   
-  // 1. ÖĞRENCİ GİRİŞİ
+  // GİRİŞ
   socket.on("joinGame", (name) => {
     players[socket.id] = {
       id: socket.id,
@@ -36,78 +37,93 @@ io.on("connection", (socket) => {
       eliminated: false,
       finished: false
     };
-    // Herkese güncel sayıyı, öğretmene detaylı listeyi gönder
     broadcastUpdate();
   });
 
-  // 2. ÖĞRETMEN GİRİŞİ (Yönetici)
   socket.on("joinAsAdmin", () => {
-    players[socket.id] = {
-      id: socket.id,
-      name: "Öğretmen",
-      role: "admin"
-    };
-    socket.emit("adminData", { players, gameStatus });
+    players[socket.id] = { id: socket.id, name: "Yönetici", role: "admin" };
+    socket.emit("adminData", { players, gameStatus, totalQuestions: questions.length });
   });
 
-  // 3. OYUNU BAŞLAT (Sadece Öğretmen)
+  // BAŞLAT
   socket.on("startGame", () => {
     gameStatus = "playing";
     winner = null;
+    // Herkesin durumunu sıfırla (yeniden başlatma desteği için)
+    Object.values(players).forEach(p => {
+      if(p.role === "player") {
+        p.currentQuestionIndex = 0;
+        p.eliminated = false;
+        p.finished = false;
+      }
+    });
     io.emit("gameStarted");
     broadcastUpdate();
   });
 
-  // 4. CEVAP KONTROLÜ
+  // CEVAP KONTROLÜ
   socket.on("submitAnswer", (answerIndex) => {
     const player = players[socket.id];
-    if (!player || player.role === "admin" || player.eliminated) return;
+    if (!player || player.role === "admin" || player.eliminated || gameStatus !== "playing") return;
 
     const currentQ = questions[player.currentQuestionIndex];
 
     if (answerIndex === currentQ.answer) {
-      // DOĞRU CEVAP
+      // DOĞRU
       player.currentQuestionIndex++;
       
-      // Oyun bitti mi bu kişi için?
       if (player.currentQuestionIndex >= questions.length) {
         player.finished = true;
-        // Eğer ilk bitirense KAZANAN odur
         if (!winner) {
           winner = player.name;
           gameStatus = "finished";
           io.emit("gameOver", { winnerName: player.name });
         } else {
-          // Kazanan zaten varsa, bu kişi sadece bitirmiş olur
           socket.emit("playerFinishedLate"); 
         }
       } else {
-        // Sonraki soruya geçmesi için bilgi ver
         socket.emit("nextQuestion", player.currentQuestionIndex);
       }
 
     } else {
-      // YANLIŞ CEVAP - ELENDİ
+      // YANLIŞ -> ELENDİ
       player.eliminated = true;
       socket.emit("youAreEliminated");
     }
     
+    // HER HAMLEDEN SONRA KONTROL ET: KİMSE KALDI MI?
+    checkIfAllEliminated();
     broadcastUpdate();
   });
 
-  // 5. ÇIKIŞ YAPANLAR
   socket.on("disconnect", () => {
     delete players[socket.id];
+    // Eğer oyun sırasında herkes çıkarsa oyunu bitir
+    if (gameStatus === "playing") checkIfAllEliminated();
     broadcastUpdate();
   });
 });
 
-// Yardımcı Fonksiyon: Tüm verileri ilgili kişilere dağıt
+function checkIfAllEliminated() {
+  if (gameStatus !== "playing") return;
+
+  const playerList = Object.values(players).filter(p => p.role === "player");
+  if (playerList.length === 0) return; // Kimse yoksa işlem yapma
+
+  // Hala yarışan (elenmemiş ve bitirmemiş) kişi sayısı
+  const activePlayers = playerList.filter(p => !p.eliminated && !p.finished).length;
+
+  // Eğer kazanan yoksa VE aktif oyuncu kalmadıysa -> HERKES KAYBETTİ
+  if (!winner && activePlayers === 0) {
+    gameStatus = "finished";
+    io.emit("gameOver", { noWinner: true });
+  }
+}
+
 function broadcastUpdate() {
   const playerList = Object.values(players).filter(p => p.role === "player");
-  
-  // 1. Öğretmene DETAYLI liste gönder
   const adminSocket = Object.values(players).find(p => p.role === "admin");
+  
   if (adminSocket) {
     io.to(adminSocket.id).emit("adminData", { 
       players: playerList, 
@@ -115,12 +131,9 @@ function broadcastUpdate() {
       totalQuestions: questions.length
     });
   }
-
-  // 2. Bekleme ekranındaki oyunculara sadece sayı gönder
   io.emit("playerCountUpdate", playerList.length);
 }
 
 server.listen(process.env.PORT || 3000, () => {
-  console.log("Proje Sunucusu Çalışıyor!");
+  console.log("Server running...");
 });
-
