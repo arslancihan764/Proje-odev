@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>AP Elite</title>
   
-  <!-- Soket & Efektler -->
+  
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
-  <!-- Font: Manrope (Modern & Geometrik) -->
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS -->
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -33,11 +33,11 @@
   <style>
     body { background-color: #050505; color: #e5e5e5; }
     
-    /* İnce, zarif geçişler */
+    
     .fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Lüks input stili */
+    
     .elite-input {
       background: transparent;
       border: none;
@@ -54,7 +54,7 @@
       letter-spacing: 2px;
     }
 
-    /* Minimal Buton */
+    
     .elite-btn {
       background: #1a1a1a;
       border: 1px solid #333;
@@ -71,11 +71,11 @@
       transform: translateY(-2px);
     }
 
-    /* Admin Listesi */
+    
     .player-row { border-bottom: 1px solid #1a1a1a; transition: 0.3s; }
     .player-row:hover { background: #0f0f0f; }
 
-    /* Scrollbar Gizle */
+    
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #050505; }
     ::-webkit-scrollbar-thumb { background: #333; }
@@ -85,13 +85,13 @@
 </head>
 <body class="h-screen flex flex-col items-center justify-center p-6 overflow-hidden relative">
 
-  <!-- Arka Plan Soyut Halka (Çok silik) -->
+  
   <div class="absolute w-[800px] h-[800px] border border-white/5 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-20"></div>
   <div class="absolute w-[600px] h-[600px] border border-white/5 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30"></div>
 
   <div class="w-full max-w-2xl relative z-10">
 
-    <!-- 1. GİRİŞ EKRANI -->
+    
     <div id="screen-login" class="text-center fade-in">
       <div class="mb-12">
         <h1 class="text-5xl font-extralight tracking-[0.2em] text-white mb-2">AP<span class="font-bold text-gold">PRO</span></h1>
@@ -113,8 +113,7 @@
       </div>
     </div>
 
-    <!-- 2. BEKLEME EKRANI -->
-    <div id="screen-wait" class="hidden text-center fade-in">
+      <div id="screen-wait" class="hidden text-center fade-in">
       <div class="w-16 h-16 border-t-2 border-r-2 border-gold rounded-full animate-spin mx-auto mb-8 opacity-80"></div>
       <h2 class="text-2xl font-light tracking-wide mb-2">BEKLENİYOR</h2>
       <p class="text-neutral-500 text-sm mb-8">Yönetici onayı bekleniyor...</p>
@@ -125,7 +124,7 @@
       </div>
     </div>
 
-    <!-- 3. ADMIN PANELİ -->
+    
     <div id="screen-admin" class="hidden w-full h-[80vh] flex flex-col fade-in bg-panel border border-white/5 rounded-xl overflow-hidden p-8">
       <div class="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
         <div>
@@ -137,7 +136,7 @@
         </button>
       </div>
 
-      <!-- Header -->
+      
       <div class="grid grid-cols-12 gap-4 text-[10px] text-neutral-600 uppercase tracking-widest mb-4 px-4">
         <div class="col-span-1 text-center">#</div>
         <div class="col-span-5">İsim</div>
@@ -145,15 +144,15 @@
         <div class="col-span-3 text-right">İlerleme</div>
       </div>
 
-      <!-- Liste -->
+      
       <div id="admin-list" class="flex-1 overflow-y-auto space-y-1">
-        <!-- JS ile dolacak -->
+        
       </div>
     </div>
 
-    <!-- 4. OYUN EKRANI -->
+    
     <div id="screen-game" class="hidden w-full fade-in">
-      <!-- Üst Bilgi -->
+      
       <div class="flex justify-between items-center mb-12 border-b border-white/10 pb-4">
         <span id="q-counter" class="text-xs font-bold text-gold tracking-widest">01 / 07</span>
         <div class="w-32 h-[1px] bg-neutral-800">
@@ -161,25 +160,25 @@
         </div>
       </div>
 
-      <!-- Soru -->
+      
       <div id="question-text" class="text-2xl md:text-3xl font-light leading-relaxed mb-12 text-center min-h-[120px] flex items-center justify-center">
         Yükleniyor...
       </div>
 
-      <!-- Seçenekler -->
+      
       <div id="options-area" class="grid grid-cols-1 gap-4 max-w-lg mx-auto">
-        <!-- JS ile dolacak -->
+        
       </div>
     </div>
 
-    <!-- 5. ELENME EKRANI -->
+    
     <div id="screen-eliminated" class="hidden text-center fade-in">
       <h1 class="text-6xl font-thin text-neutral-800 mb-4 tracking-widest">ELENDİN</h1>
       <div class="w-12 h-[1px] bg-red-900 mx-auto mb-6"></div>
       <p class="text-neutral-500 text-sm tracking-wide">Yarışma devam ediyor, lütfen bekleyiniz.</p>
     </div>
 
-    <!-- 6. SONUÇ EKRANI -->
+    
     <div id="screen-result" class="hidden text-center fade-in">
       <div id="result-icon" class="text-4xl mb-6 text-gold animate-bounce"></div>
       <h2 id="winner-title" class="text-3xl font-light tracking-[0.3em] mb-4 text-white uppercase"></h2>
@@ -197,7 +196,7 @@
   let myRole = "player";
   let totalQuestions = 7;
 
-  // --- SORULAR (Server yönetir ama client gösterir) ---
+  
   const questions = [
     { q: "Emziren kadınlarda önerilmeyen yöntem?", options: ["KOK", "RİA", "Kondom", "POP"] },
     { q: "Doğum sonrası hormonal yöntem ne zaman başlanabilir?", options: ["Hemen", "6 hafta sonra", "1 yıl sonra", "Asla"] },
@@ -226,7 +225,7 @@
     socket.emit("startGame");
     const btn = document.getElementById("start-btn");
     btn.innerText = "YAYINDA";
-    btn.style.borderColor = "#22c55e"; // Yeşil
+    btn.style.borderColor = "#22c55e";
     btn.style.color = "#22c55e";
     btn.disabled = true;
   }
@@ -285,7 +284,7 @@
 
   socket.on("gameOver", (data) => {
     if(myRole === "admin") {
-      // Admin için soft uyarı, alert yerine buton rengini değiştir
+      
       document.getElementById("start-btn").innerText = "BİTTİ";
       document.getElementById("start-btn").style.borderColor = "#ef4444";
       document.getElementById("start-btn").style.color = "#ef4444";
@@ -298,7 +297,7 @@
       const amIWinner = (document.getElementById("username").value === data.winnerName);
       if (amIWinner) {
         showResult("ŞAMPİYON", data.winnerName, "👑");
-        // Altın konfetiler
+        
         var duration = 3 * 1000;
         var end = Date.now() + duration;
         (function frame() {
@@ -315,12 +314,12 @@
   function loadQuestion(index) {
     if(index >= questions.length) return;
     
-    // Progress update
+    
     const percent = ((index) / questions.length) * 100;
     document.getElementById("progress-bar").style.width = percent + "%";
     document.getElementById("q-counter").innerText = (index + 1).toString().padStart(2, '0') + " / " + questions.length.toString().padStart(2, '0');
 
-    // Fade effect for text
+    
     const qText = document.getElementById("question-text");
     qText.style.opacity = 0;
     setTimeout(() => {
@@ -333,7 +332,7 @@
 
     questions[index].options.forEach((opt, i) => {
       const btn = document.createElement("button");
-      // Elit buton stili
+      
       btn.className = "w-full text-left px-6 py-5 border border-white/10 hover:border-gold hover:bg-gold/5 transition-all duration-300 text-sm md:text-base font-light tracking-wide text-neutral-300 hover:text-white group";
       
       btn.innerHTML = `<span class="inline-block w-6 text-neutral-600 group-hover:text-gold mr-2 text-xs font-mono">0${i+1}</span> ${opt}`;
@@ -341,7 +340,7 @@
       btn.onclick = () => {
         socket.emit("submitAnswer", i);
         area.style.pointerEvents = "none";
-        // Seçim efekti
+        
         btn.classList.add("bg-white", "text-black", "border-white");
         btn.classList.remove("text-neutral-300", "hover:bg-gold/5", "hover:border-gold");
       };
