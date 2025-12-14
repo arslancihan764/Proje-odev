@@ -3,140 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AP Proje</title>
-  
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  
-  <!-- Font: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-          colors: {
-            black: '#000000',
-            white: '#FFFFFF',
-            offwhite: '#F9FAFB'
-          },
-          boxShadow: {
-            'elite': '0 4px 20px rgba(0,0,0,0.04)',
-            'elite-hover': '0 10px 25px rgba(0,0,0,0.08)'
-          }
-        }
-      }
-    }
-  </script>
-
-  <style>
-    body { background-color: #FFFFFF; color: #000000; }
-    
-    .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Input */
-    .elite-input {
-      background: #F9FAFB;
-      border: 1px solid transparent;
-      text-align: center;
-      transition: all 0.3s ease;
-      font-weight: 500;
-    }
-    .elite-input:focus {
-      background: #FFFFFF;
-      border-color: #000000;
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
-    }
-
-    /* Button */
-    .elite-btn {
-      background: #000000;
-      color: #FFFFFF;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-    .elite-btn:hover {
-      background: #333333;
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
-    .elite-btn:active { transform: scale(0.98); }
-
-    .hidden { display: none !important; }
-    
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #fff; }
-    ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
-  </style>
-</head>
-<body class="h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
-
-  <!-- Arkaplan -->
-  <div class="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gray-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 pointer-events-none"></div>
-  <div class="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-gray-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 pointer-events-none"></div>
-
-  <div class="w-full max-w-xl relative z-10">
-
-    <!-- 1. GİRİŞ -->
-    <div id="screen-login" class="text-center fade-in">
-      <div class="mb-16">
-        <h1 class="text-5xl font-black tracking-tighter text-black mb-1">AP<span class="font-light text-gray-400">PROJE</span></h1>
-        <div class="w-12 h-1 bg-black mx-auto mt-4"></div>
-      </div>
-
-      <div class="space-y-6 max-w-xs mx-auto">
-        <input id="username" type="text" placeholder="İsminizi Giriniz" class="elite-input w-full py-5 rounded-2xl text-lg shadow-sm">
-        
-        <button onclick="joinGame()" class="elite-btn w-full py-5 rounded-2xl text-sm uppercase shadow-elite">
-          Yarışmaya Katıl
-        </button>
-        
-        <!-- YÖNETİCİ BUTONU (Otomatik Gizlenir) -->
-        <div id="admin-login-area" class="pt-10 transition-all duration-500 opacity-100">
-          <button onclick="joinAdmin()" class="text-[10px] font-bold text-gray-400 hover:text-black transition uppercase tracking-[0.2em] border-b border-transparent hover:border-black pb-1">
-            Yönetici Girişi
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. BEKLEME -->
-    <div id="screen-wait" class="hidden text-center fade-in">
-      <div class="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-elite animate-pulse">
-        <span id="player-count" class="text-2xl font-bold">0</span>
-      </div>
-      <h2 class="text-3xl font-bold tracking-tight mb-3">Bekleniyor...</h2>
-      <p class="text-gray-500 font-medium">Yönetici oyunu başlattığında ekran değişecektir.</p>
-    </div>
-
-    <!-- 3. ADMIN PANELİ -->
-    <div id="screen-admin" class="hidden w-full h-[85vh] flex flex-col fade-in bg-white border border-gray-100 rounded-3xl shadow-2xl overflow-hidden">
-      <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-        <div>
-          <h2 class="text-xl font-bold text-black tracking-tight">Yönetici Paneli</h2>
-          <div class="flex items-center gap-2 mt-1">
-            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Canlı Bağlantı</span>
-          </div>
-        </div>
-        <button id="start-btn" onclick="startGame()" class="bg-black text-white px-8 py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition shadow-lg transform active:scale-95">
-          BAŞLAT
-        </button>
-      </div>
-
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AP Proje</title>
+  <title>AP Project</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -316,9 +183,6 @@
   let myRole = "player";
   let totalQuestions = 30; 
 
-  // --- SORULAR (Server'dan yönetiliyor ama client tarafında placeholder kalabilir veya silinebilir) ---
-  // Not: Asıl sorular sunucu tarafında ama oyun başladığında sunucu sadece indeksleri yönetiyor.
-  // Soruların metinleri burada client tarafında tanımlı olması gerekiyor ki gösterilebilsin.
   const questions = [
     { q: "Doğum sonrası emziren kadınlarda, östrojen nedeniyle önerilmeyen yöntem hangisidir?", options: ["Sadece progesteron içeren implant", "DMPA", "Kondom", "Kombine oral kontraseptifler", "Bakırlı RİA"] },
     { q: "Emziren kadınlarda sadece progesteron içeren yöntemlere doğumdan ne zaman başlanabilir?", options: ["Hemen", "2 hafta sonra", "6 hafta sonra", "3 ay sonra", "6 ay sonra"] },
@@ -388,7 +252,15 @@
     totalQuestions = data.totalQuestions;
     const list = document.getElementById("admin-list");
     list.innerHTML = "";
-    const sortedPlayers = data.players.sort((a,b) => b.currentQuestionIndex - a.currentQuestionIndex);
+    
+    // GÜVENLİK KONTROLÜ: Gelen veri dizi mi?
+    let sortedPlayers = [];
+    if (Array.isArray(data.players)) {
+      sortedPlayers = data.players.sort((a,b) => b.currentQuestionIndex - a.currentQuestionIndex);
+    } else {
+      console.error("Beklenmeyen veri formatı:", data.players);
+      return; 
+    }
 
     sortedPlayers.forEach((p, index) => {
       let statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase bg-green-100 text-green-700">Aktif</span>`;
@@ -466,10 +338,6 @@
   });
 
   socket.on("gameOver", (data) => {
-    // BURADAKİ DEĞİŞİKLİK:
-    // Artık admin kontrolü (if myRole === "admin") kaldırıldı.
-    // Böylece oyun bitince admin de 'screen-result' ekranına yönlendirilecek.
-
     showScreen("screen-result");
     const list = document.getElementById("leaderboard-list");
     list.innerHTML = "";
@@ -480,7 +348,6 @@
     } else {
       document.getElementById("winner-title").innerText = "KAZANAN: " + data.winnerName;
       document.getElementById("winner-msg").innerText = "Şampiyon belli oldu!";
-      // Eğer kendi adımız kazanan ise konfeti patlat
       if (document.getElementById("username").value === data.winnerName) {
         confetti({ particleCount: 300, spread: 100, origin: { y: 0.6 }, colors: ['#000000', '#aaaaaa'] });
       }
@@ -526,4 +393,5 @@
 </script>
 </body>
 </html>
+
 
