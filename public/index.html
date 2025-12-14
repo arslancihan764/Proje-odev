@@ -3,27 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Aile Planlaması Yarışma</title>
-  
+  <title>AP Project</title>
   
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   
-  
+  <!-- Font: Inter (Apple/Modern Web standardı) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
   
-  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['Manrope', 'sans-serif'] },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
           colors: {
-            gold: '#D4AF37',
-            dark: '#050505',
-            panel: '#111111'
+            black: '#000000',
+            white: '#FFFFFF',
+            offwhite: '#F9FAFB',
+            border: '#E5E7EB'
+          },
+          boxShadow: {
+            'elite': '0 4px 20px rgba(0,0,0,0.04)',
+            'elite-hover': '0 10px 25px rgba(0,0,0,0.08)'
           }
         }
       }
@@ -31,162 +35,160 @@
   </script>
 
   <style>
-    body { background-color: #050505; color: #e5e5e5; }
+    body { background-color: #FFFFFF; color: #000000; }
     
-    
-    .fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    
+    /* Modern Input */
     .elite-input {
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid #333;
-      color: white;
+      background: #F9FAFB;
+      border: 1px solid transparent;
       text-align: center;
-      transition: all 0.5s ease;
-      font-weight: 200;
-      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      font-weight: 500;
     }
     .elite-input:focus {
+      background: #FFFFFF;
+      border-color: #000000;
       outline: none;
-      border-bottom: 1px solid #D4AF37;
-      letter-spacing: 2px;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
     }
 
-    
+    /* Modern Button */
     .elite-btn {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      color: #888;
-      transition: all 0.4s ease;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-size: 0.75rem;
+      background: #000000;
+      color: #FFFFFF;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
     .elite-btn:hover {
-      background: #D4AF37;
-      border-color: #D4AF37;
-      color: black;
-      transform: translateY(-2px);
+      background: #333333;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
-
-    
-    .player-row { border-bottom: 1px solid #1a1a1a; transition: 0.3s; }
-    .player-row:hover { background: #0f0f0f; }
-
-    
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #050505; }
-    ::-webkit-scrollbar-thumb { background: #333; }
+    .elite-btn:active { transform: scale(0.98); }
 
     .hidden { display: none !important; }
+    
+    /* İnce Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #fff; }
+    ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
   </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center p-6 overflow-hidden relative">
+<body class="h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
 
-  
-  <div class="absolute w-[800px] h-[800px] border border-white/5 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-20"></div>
-  <div class="absolute w-[600px] h-[600px] border border-white/5 rounded-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-30"></div>
+  <!-- Dekoratif Arkaplan (Çok hafif gri daireler) -->
+  <div class="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gray-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 pointer-events-none"></div>
+  <div class="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-gray-50 rounded-full mix-blend-multiply filter blur-3xl opacity-70 pointer-events-none"></div>
 
-  <div class="w-full max-w-2xl relative z-10">
+  <div class="w-full max-w-xl relative z-10">
 
-    
+    <!-- 1. GİRİŞ EKRANI -->
     <div id="screen-login" class="text-center fade-in">
-      <div class="mb-12">
-        <h1 class="text-5xl font-extralight tracking-[0.2em] text-white mb-2">AP<span class="font-bold text-gold">PRO</span></h1>
-        <p class="text-xs text-neutral-500 uppercase tracking-widest">Minimalist Bilgi Yarışması</p>
+      <div class="mb-16">
+        <h1 class="text-5xl font-black tracking-tighter text-black mb-1">AP<span class="font-light text-gray-400">PROJECT</span></h1>
+        <div class="w-12 h-1 bg-black mx-auto mt-4"></div>
       </div>
 
-      <div class="space-y-8 max-w-xs mx-auto">
-        <input id="username" type="text" placeholder="İSİM GİRİNİZ" class="elite-input w-full py-4 text-xl placeholder-neutral-700">
+      <div class="space-y-6 max-w-xs mx-auto">
+        <input id="username" type="text" placeholder="İsminizi Giriniz" class="elite-input w-full py-5 rounded-2xl text-lg shadow-sm">
         
-        <button onclick="joinGame()" class="elite-btn w-full py-4 rounded-sm font-semibold">
-          Yarışmaya Başla
+        <button onclick="joinGame()" class="elite-btn w-full py-5 rounded-2xl text-sm uppercase shadow-elite">
+          Yarışmaya Katıl
         </button>
         
-        <div class="pt-8">
-          <button onclick="joinAdmin()" class="text-[10px] text-neutral-700 hover:text-neutral-400 transition tracking-widest uppercase">
-            Yönetici Paneli
+        <!-- YÖNETİCİ BUTONU (Otomatik Gizlenir) -->
+        <div id="admin-login-area" class="pt-10 transition-all duration-500 opacity-100">
+          <button onclick="joinAdmin()" class="text-[10px] font-bold text-gray-400 hover:text-black transition uppercase tracking-[0.2em] border-b border-transparent hover:border-black pb-1">
+            Yönetici Girişi
           </button>
         </div>
       </div>
     </div>
 
-      <div id="screen-wait" class="hidden text-center fade-in">
-      <div class="w-16 h-16 border-t-2 border-r-2 border-gold rounded-full animate-spin mx-auto mb-8 opacity-80"></div>
-      <h2 class="text-2xl font-light tracking-wide mb-2">BEKLENİYOR</h2>
-      <p class="text-neutral-500 text-sm mb-8">Yönetici onayı bekleniyor...</p>
-      
-      <div class="inline-flex items-center gap-2 px-4 py-2 border border-white/10 rounded-full">
-        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-        <span class="text-xs text-neutral-400">BAĞLI: <span id="player-count" class="text-white">0</span></span>
+    <!-- 2. BEKLEME EKRANI -->
+    <div id="screen-wait" class="hidden text-center fade-in">
+      <div class="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-elite animate-pulse">
+        <span id="player-count" class="text-2xl font-bold">0</span>
       </div>
+      <h2 class="text-3xl font-bold tracking-tight mb-3">Bekleniyor...</h2>
+      <p class="text-gray-500 font-medium">Yönetici oyunu başlattığında ekranınızda sorular belirecektir.</p>
     </div>
 
-    
-    <div id="screen-admin" class="hidden w-full h-[80vh] flex flex-col fade-in bg-panel border border-white/5 rounded-xl overflow-hidden p-8">
-      <div class="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
+    <!-- 3. ADMIN PANELİ -->
+    <div id="screen-admin" class="hidden w-full h-[85vh] flex flex-col fade-in bg-white border border-gray-100 rounded-3xl shadow-2xl overflow-hidden">
+      <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
         <div>
-          <h2 class="text-xl font-light tracking-widest text-gold">KONTROL PANELİ</h2>
-          <p class="text-xs text-neutral-500 mt-1">CANLI YAYIN AKIŞI</p>
+          <h2 class="text-xl font-bold text-black tracking-tight">Yönetici Paneli</h2>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Canlı Bağlantı</span>
+          </div>
         </div>
-        <button id="start-btn" onclick="startGame()" class="elite-btn px-6 py-3 border-gold/50 text-gold hover:bg-gold hover:text-black">
+        <button id="start-btn" onclick="startGame()" class="bg-black text-white px-8 py-3 rounded-xl text-sm font-bold hover:bg-gray-800 transition shadow-lg transform active:scale-95">
           BAŞLAT
         </button>
       </div>
 
-      
-      <div class="grid grid-cols-12 gap-4 text-[10px] text-neutral-600 uppercase tracking-widest mb-4 px-4">
-        <div class="col-span-1 text-center">#</div>
-        <div class="col-span-5">İsim</div>
-        <div class="col-span-3 text-center">Durum</div>
-        <div class="col-span-3 text-right">İlerleme</div>
-      </div>
-
-      
-      <div id="admin-list" class="flex-1 overflow-y-auto space-y-1">
-        
+      <div class="flex-1 overflow-y-auto p-2" id="admin-list">
+        <!-- Oyuncular buraya -->
       </div>
     </div>
 
-    
+    <!-- 4. OYUN EKRANI -->
     <div id="screen-game" class="hidden w-full fade-in">
-      
-      <div class="flex justify-between items-center mb-12 border-b border-white/10 pb-4">
-        <span id="q-counter" class="text-xs font-bold text-gold tracking-widest">01 / 07</span>
-        <div class="w-32 h-[1px] bg-neutral-800">
-          <div id="progress-bar" class="h-full bg-gold transition-all duration-700" style="width: 0%"></div>
+      <div class="flex justify-between items-center mb-10 px-1">
+        <span id="q-counter" class="text-xs font-black text-gray-300 tracking-[0.2em]">01 / 30</span>
+        <div class="w-32 h-1 bg-gray-100 rounded-full overflow-hidden">
+          <div id="progress-bar" class="h-full bg-black transition-all duration-500" style="width: 0%"></div>
         </div>
       </div>
 
-      
-      <div id="question-text" class="text-2xl md:text-3xl font-light leading-relaxed mb-12 text-center min-h-[120px] flex items-center justify-center">
+      <div id="question-text" class="text-xl md:text-2xl font-bold leading-relaxed mb-10 text-center text-black min-h-[120px] flex items-center justify-center">
         Yükleniyor...
       </div>
 
-      
-      <div id="options-area" class="grid grid-cols-1 gap-4 max-w-lg mx-auto">
-        
+      <div id="options-area" class="grid grid-cols-1 gap-3 max-w-md mx-auto">
+        <!-- Seçenekler -->
       </div>
     </div>
 
-    
+    <!-- 5. ELENME EKRANI -->
     <div id="screen-eliminated" class="hidden text-center fade-in">
-      <h1 class="text-6xl font-thin text-neutral-800 mb-4 tracking-widest">ELENDİN</h1>
-      <div class="w-12 h-[1px] bg-red-900 mx-auto mb-6"></div>
-      <p class="text-neutral-500 text-sm tracking-wide">Yarışma devam ediyor, lütfen bekleyiniz.</p>
+      <div class="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </div>
+      <h1 class="text-3xl font-bold text-black mb-3">Elendiniz</h1>
+      <p class="text-gray-500">Lütfen oyunun bitmesini bekleyin.<br>Sıralama sonunda gösterilecektir.</p>
     </div>
 
-    
-    <div id="screen-result" class="hidden text-center fade-in">
-      <div id="result-icon" class="text-4xl mb-6 text-gold animate-bounce"></div>
-      <h2 id="winner-title" class="text-3xl font-light tracking-[0.3em] mb-4 text-white uppercase"></h2>
-      <p id="winner-msg" class="text-neutral-400 text-sm font-light mb-12 tracking-wide"></p>
+    <!-- 6. SONUÇ VE SIRALAMA EKRANI -->
+    <div id="screen-result" class="hidden w-full h-[90vh] flex flex-col fade-in bg-white border border-gray-200 rounded-3xl shadow-2xl overflow-hidden">
       
-      <button onclick="location.reload()" class="elite-btn px-12 py-4">
-        Sistemi Yenile
-      </button>
+      <!-- Üst Kısım -->
+      <div class="p-8 text-center bg-gray-50 border-b border-gray-200">
+        <h2 id="winner-title" class="text-4xl font-black mb-2 uppercase tracking-tighter text-black"></h2>
+        <p id="winner-msg" class="text-gray-500 text-sm font-medium tracking-wide"></p>
+      </div>
+
+      <!-- Liste Başlığı -->
+      <div class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white border-b border-gray-100">
+        Sıralama Tablosu
+      </div>
+
+      <!-- Liste -->
+      <div class="flex-1 overflow-y-auto bg-white" id="leaderboard-list">
+        <!-- JS ile dolacak -->
+      </div>
+
+      <div class="p-4 border-t border-gray-100 bg-white">
+        <button onclick="location.reload()" class="w-full bg-black text-white py-4 rounded-2xl font-bold text-sm hover:bg-gray-900 transition">
+          YENİ OYUN
+        </button>
+      </div>
     </div>
 
   </div>
@@ -194,19 +196,20 @@
 <script>
   const socket = io();
   let myRole = "player";
-  let totalQuestions = 7;
+  let totalQuestions = 30; // Server'dan güncellenecek
 
-  
-  const questions = [
-    { q: "Emziren kadınlarda önerilmeyen yöntem?", options: ["KOK", "RİA", "Kondom", "POP"] },
-    { q: "Doğum sonrası hormonal yöntem ne zaman başlanabilir?", options: ["Hemen", "6 hafta sonra", "1 yıl sonra", "Asla"] },
-    { q: "Gençlerde CYBE için en önemli korunma yöntemi?", options: ["RİA", "Kondom", "Ligasyon", "İmplant"] },
-    { q: "Nullipar nedir?", options: ["Doğum yapmamış", "İkiz doğurmuş", "Menopozda", "Erkek partner"] },
-    { q: "Acil kontrasepsiyon en etkilisi?", options: ["KOK", "Bakırlı RİA", "Doğal", "Takvim yöntemi"] },
-    { q: "Menopoz ortalama kaç yaş?", options: ["35", "42", "50", "58"] },
-    { q: "AP Projesi başarıyla tamamlandı mı?", options: ["Hayır", "Belki", "EVET!", "Sanmıyorum"] }
-  ];
+  // --- ADMIN BUTONU GİZLEME (KRİTİK) ---
+  socket.on("adminStatus", (data) => {
+    const adminArea = document.getElementById("admin-login-area");
+    // Eğer admin varsa VEYA ben zaten adminsem gizle
+    if (data.hasAdmin) {
+      adminArea.classList.add("hidden");
+    } else {
+      adminArea.classList.remove("hidden");
+    }
+  });
 
+  // --- OYUN AKIŞI ---
   function joinGame() {
     const name = document.getElementById("username").value;
     if(!name) return;
@@ -225,12 +228,12 @@
     socket.emit("startGame");
     const btn = document.getElementById("start-btn");
     btn.innerText = "YAYINDA";
-    btn.style.borderColor = "#22c55e";
-    btn.style.color = "#22c55e";
+    btn.classList.remove("bg-black", "hover:bg-gray-800");
+    btn.classList.add("bg-green-500", "cursor-default");
     btn.disabled = true;
   }
 
-  // --- ADMIN UPDATE ---
+  // --- ADMIN PANEL VERİLERİ ---
   socket.on("adminData", (data) => {
     if(myRole !== "admin") return;
     totalQuestions = data.totalQuestions;
@@ -238,26 +241,29 @@
     const list = document.getElementById("admin-list");
     list.innerHTML = "";
     
+    // Sıralama: En çok soru bilen en üstte
     const sortedPlayers = data.players.sort((a,b) => b.currentQuestionIndex - a.currentQuestionIndex);
 
     sortedPlayers.forEach((p, index) => {
-      let statusDot = `<div class="w-2 h-2 rounded-full bg-green-500 mx-auto shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>`;
-      let opacity = "opacity-100";
+      let statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase bg-green-100 text-green-700">Aktif</span>`;
       
       if(p.eliminated) {
-        statusDot = `<div class="w-2 h-2 rounded-full bg-red-900 mx-auto"></div>`;
-        opacity = "opacity-40";
+        statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase bg-red-50 text-red-500">Elendi</span>`;
       } else if(p.finished) {
-        statusDot = `<div class="w-2 h-2 rounded-full bg-gold mx-auto shadow-[0_0_10px_rgba(212,175,55,0.5)]"></div>`;
+        statusBadge = `<span class="px-2 py-1 rounded text-[10px] font-bold uppercase bg-yellow-100 text-yellow-700">Bitti</span>`;
       }
 
       const item = document.createElement("div");
-      item.className = `grid grid-cols-12 gap-4 items-center px-4 py-3 player-row ${opacity}`;
+      item.className = "flex items-center justify-between p-4 mb-2 bg-gray-50 rounded-2xl border border-transparent hover:border-gray-200 transition";
       item.innerHTML = `
-        <div class="col-span-1 text-center text-xs text-neutral-600">${index + 1}</div>
-        <div class="col-span-5 font-light tracking-wide text-sm truncate">${p.name}</div>
-        <div class="col-span-3 text-center">${statusDot}</div>
-        <div class="col-span-3 text-right text-xs text-neutral-500 font-mono">${p.currentQuestionIndex}/${totalQuestions}</div>
+        <div class="flex items-center gap-4">
+          <span class="text-xs font-bold text-gray-300 w-4">#${index+1}</span>
+          <span class="font-bold text-sm text-black">${p.name}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          ${statusBadge}
+          <span class="text-xs font-mono font-bold text-gray-400 w-10 text-right">${p.currentQuestionIndex}/${totalQuestions}</span>
+        </div>
       `;
       list.appendChild(item);
     });
@@ -268,96 +274,157 @@
   socket.on("gameStarted", () => {
     if(myRole === "player") {
       showScreen("screen-game");
-      loadQuestion(0);
     }
   });
 
-  socket.on("nextQuestion", (idx) => loadQuestion(idx));
+  socket.on("nextQuestion", (idx) => loadQuestion(idx)); // Serverdan soru indexi gelince yükle
   
-  socket.on("youAreEliminated", () => {
-    showScreen("screen-eliminated");
-  });
-
-  socket.on("playerFinishedLate", () => {
-    showResult("TAMAMLANDI", "Yarışmayı bitirdiniz ancak sıralamaya giremediniz.", "✨");
-  });
-
-  socket.on("gameOver", (data) => {
-    if(myRole === "admin") {
-      
-      document.getElementById("start-btn").innerText = "BİTTİ";
-      document.getElementById("start-btn").style.borderColor = "#ef4444";
-      document.getElementById("start-btn").style.color = "#ef4444";
-      return;
-    }
-
-    if(data.noWinner) {
-      showResult("SONUÇ YOK", "Kazanan çıkmadı.", "💀");
-    } else {
-      const amIWinner = (document.getElementById("username").value === data.winnerName);
-      if (amIWinner) {
-        showResult("ŞAMPİYON", data.winnerName, "👑");
-        
-        var duration = 3 * 1000;
-        var end = Date.now() + duration;
-        (function frame() {
-          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#D4AF37', '#ffffff'] });
-          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#D4AF37', '#ffffff'] });
-          if (Date.now() < end) requestAnimationFrame(frame);
-        }());
-      } else {
-        showResult("KAZANAN", data.winnerName, "👏");
-      }
-    }
-  });
+  // İlk soru veya oyun başlarken soru metnini güncellemek için listener gerekebilir
+  // Ancak server zaten nextQuestion yolluyor veya admin start verince client 0'dan başlıyor.
+  // Burada client logic'i loadQuestion'u server'dan gelen datayla beslemeli.
+  // Not: Sorular server'da. Client'a soru metnini server'dan da gönderebiliriz veya
+  // client'da da aynı liste olabilir. Güvenlik için client'a sadece o anki soruyu göndermek iyidir 
+  // ama basitlik için client'da listeyi tutuyoruz (cevap anahtarı serverda).
+  
+  // --- CLIENT SORU LİSTESİ (Sadece Görsel) ---
+  const questions = [
+    { q: "Doğum sonrası emziren kadınlarda, östrojen nedeniyle önerilmeyen yöntem hangisidir?", options: ["Sadece progesteron içeren implant", "DMPA", "Kondom", "Kombine oral kontraseptifler", "Bakırlı RİA"] },
+    { q: "Emziren kadınlarda sadece progesteron içeren yöntemlere doğumdan ne zaman başlanabilir?", options: ["Hemen", "2 hafta sonra", "6 hafta sonra", "3 ay sonra", "6 ay sonra"] },
+    { q: "Doğum sonrası emzirmeyen kadınlar aile planlaması yöntemine ne zaman başlayabilir?", options: ["Doğumdan 2 ay sonra", "Doğumdan hemen veya 3 hafta sonra", "Doğumdan 6 ay sonra", "Sadece adet sonrası", "Sadece 40. günden sonra"] },
+    { q: "Doğum sonrası kondom kullanımının en önemli nedeni nedir?", options: ["Sütü artırması", "Yan etkilerinin olmaması", "Uzun etkili yönteme geçinceye kadar koruma sağlaması", "Rahim kasılmalarını azaltması", "Ekonomik olması"] },
+    { q: "Doğum sonrası diyafram ve servikal başlık kullanımı için kaç hafta beklenmelidir?", options: ["2 hafta", "3 hafta", "4 hafta", "6 hafta", "8 hafta"] },
+    { q: "Komplikasyonsuz isteyerek düşük sonrası aşağıdaki yöntemlerden hangisine hemen başlanabilir?", options: ["Doğal yöntemler", "KOK", "Doğurganlık takibi", "Servikal başlık", "Annelik planlama testi"] },
+    { q: "Düşük sonrası başlanmaması gereken yöntem hangisidir?", options: ["Kondom", "RİA", "İmplant", "Doğal aile planlaması yöntemleri", "DMPA"] },
+    { q: "Gençlerin yöntem kullanırken yaşadığı en büyük sorunlardan biri nedir?", options: ["Yöntemlerin çok pahalı olması", "Aile ve arkadaşlarının fark etmesinden endişe duymaları", "Sağlık çalışanına güvenmemeleri", "Sağlık kuruluşuna gidememeleri", "Ovulasyon takibini bilmemeleri"] },
+    { q: "Gençlerde 18 yaş altında ilk seçenek olmayan yöntem aşağıdakilerden hangisidir?", options: ["Kondom", "Diyafram", "Spermisit", "Sadece progesteron içeren enjekte edilen yöntemler", "KOK"] },
+    { q: "20 yaş altındaki nulliparlarda ilk seçenek olmayan yöntem hangisidir?", options: ["Kondom", "KOK", "DMPA", "Cu-RİA", "Mini hap"] },
+    { q: "Gençlerde CYBE riskine karşı en etkili koruma hangi kombinasyonda sağlanır?", options: ["KOK tek başına", "Diyafram + spermisit", "Kondom + KOK", "RİA + KOK", "İmplant + KOK"] },
+    { q: "Gençlerde sigara kullanımına bağlı olarak hangi KOK türü önerilir?", options: ["50 µg östrojen içeren", "35 µg östrojen içeren", "20 µg etinil östradiol içeren", "Sadece östrojen içeren", "Östrojen içermeyen"] },
+    { q: "Menopoz döneminde gebelik riskinin devam etmesinin nedeni nedir?", options: ["Kadının süt üretmesi", "Rahmin büyümesi", "Düzensiz ovulasyon nedeniyle yumurtlamanın devam edebilmesi", "Foliküllerin artması", "Endometriumun incelmesi"] },
+    { q: "Aşağıdakilerden hangisi menopoz yaşı için doğrudur?", options: ["Türkiye’de ortalama 35", "Dünya genelinde 40", "Türkiye’de ortalama 50", "55–60 arası değişir", "Sigara içmek menopoz yaşını yükseltir"] },
+    { q: "Acil kontrasepsiyon ile ilgili yanlış olan ifade hangisidir?", options: ["Gebeliği büyük ölçüde önler", "%99 etkilidir", "RİA kullanılabilir", "Gebelik oluştuktan sonra etkilidir", "Tecavüz durumunda özenli danışmanlık gerekir"] },
+    { q: "Acil kontrasepsiyonun tek kontrendikasyonu nedir?", options: ["Emzirme", "Genç yaş", "Sadece progesteron kullanımı", "Gebelik", "Doğumsal uterin anomaliler"] },
+    { q: "Acil kontrasepsiyonda RİA'nın etkisi nedir?", options: ["Endometrium kalınlaştırır", "Fertilizasyonu ve implantasyonu önler", "Ovulasyonu durdurur", "Serviks mukusunu inceltir", "Progesteronu artırır"] },
+    { q: "Gençlerin cinselliği çoğu zaman hangi ihtiyaca dayanır?", options: ["Anne olma isteği", "Fiziksel zorunluluk", "Kabul edilme veya şefkat ihtiyacı", "Aile baskısından kaçınma", "Sosyal medya etkisi"] },
+    { q: "Zeka engelli kişiler için aile planlaması hizmetlerinde öncelik hangisidir?", options: ["Yöntemi gizlemek", "Danışmanlığın onların anlayacağı şekilde verilmesi", "Yüksek doz hormon tercih etmek", "Sadece kondom vermek", "Kalıcı yöntem zorunluluğu"] },
+    { q: "Doğum sonrası kombine enjekte edilen kontraseptifler en erken ne zaman başlanabilir?", options: ["Doğumdan hemen", "1 hafta sonra", "2 hafta sonra", "3 hafta sonra", "3 ay sonra"] },
+    { q: "Düşük sonrası kadınlara aile planlaması danışmanlığı ne zaman verilmelidir?", options: ["Sadece taburcu olurken", "Adet olunca", "Düşükten önce, hemen sonra veya kontrolde", "6 hafta sonra", "Yöntem istediğinde"] },
+    { q: "Acil kontrasepsiyon aşağıdakilerden hangisidir?", options: ["Düzenli bir aile planlaması yöntemi", "İstenmeyen gebeliği önlemek için kullanılan geçici yöntem", "Kalıcı çözüm", "Sadece gençlere önerilen yöntem", "Aile planlaması dışı bir uygulama"] },
+    { q: "Acil kontrasepsiyonda etkililik neden zamanla azalır?", options: ["Rahim küçülür", "Fertilizasyon ve implantasyon zamanla gerçekleşebilir", "Ovulasyon durur", "Hormonlar artar", "Servikste kuruluk olur"] },
+    { q: "Aşağıdakilerden hangisi gençlerde yöntem seçiminde önemli bir zorluktur?", options: ["Sağlık çalışanına ulaşamamak", "Düzenli uygulama gerektiren yöntemlerden kaçınmaları", "Aile onayının zorunlu olması", "Yöntem fiyatlarının yüksek olması", "İç salgı bozukluğu"] },
+    { q: "Perimenopozdaki bir kadında gebelik neden risklidir?", options: ["Serviks çok dar olduğu için", "Kan değerleri düşük olduğu için", "Anne ve bebek için komplikasyon riski arttığı için", "Doğum kanaması olmadığı için", "FSH düşük olduğu için"] },
+    { q: "Gençlerde istenmeyen cinsel davranışların bir nedeni nedir?", options: ["Erken menopoz", "Vitamin eksikliği", "Zorla veya baskı ile ilişkiye maruz kalma", "Ovulasyon bozukluğu", "Uygun partner bulamama"] },
+    { q: "Aşağıdakilerden hangisi aile planlaması yöntemlerinin gençlerde kullanılabilirliği hakkında doğrudur?", options: ["Çoğu yöntemi kullanamazlar", "RİA gençlerde yasaktır", "Mevcut tüm yöntemler kullanılabilir, ancak bazıları ilk seçenek değildir", "Sadece kondom uygundur", "Sadece hormonal yöntem uygundur"] },
+    { q: "Eczanelerin aile planlaması hizmetlerinde avantajlarından biri değildir?", options: ["Yakın ve hızlı hizmet", "Farklı marka seçenekleri", "Tanıdık olmayan ortam", "Kalıcı yöntem yapabilmesi", "Ücretsiz bilgi ve öneri verilmesi"] },
+    { q: "Acil kontrasepsiyonun yaygın kullanımı neyi sağlar?", options: ["Süt üretimini artırır", "Ovulasyonu düzenler", "Milyonlarca istenmeyen gebeliğin oluşmadan önlenmesi", "Regl düzenini düzeltir", "RİA kullanımını azaltır"] },
+    { q: "Eczanelerin aile planlamasında rolü ile ilgili doğru ifade hangisidir?", options: ["Gebeliği önleyici yöntemler sadece doktor tarafından verilebilir", "Eczanelerde hekime gitmeden gebelikten korunma ürünleri alınabilir", "Eczaneler sadece KOK satar", "Danışmanlık ücretlidir", "Gençlere hizmet vermezler"] }
+  ];
 
   function loadQuestion(index) {
+    // Eğer start game'den sonra client manuel 0. soruyu yüklemediyse burası çalışır
     if(index >= questions.length) return;
-    
+    showScreen("screen-game");
     
     const percent = ((index) / questions.length) * 100;
     document.getElementById("progress-bar").style.width = percent + "%";
-    document.getElementById("q-counter").innerText = (index + 1).toString().padStart(2, '0') + " / " + questions.length.toString().padStart(2, '0');
+    document.getElementById("q-counter").innerText = (index + 1).toString().padStart(2, '0') + " / " + questions.length;
 
-    
     const qText = document.getElementById("question-text");
     qText.style.opacity = 0;
     setTimeout(() => {
       qText.innerText = questions[index].q;
       qText.style.opacity = 1;
-    }, 300);
+    }, 200);
 
     const area = document.getElementById("options-area");
     area.innerHTML = "";
 
     questions[index].options.forEach((opt, i) => {
       const btn = document.createElement("button");
-      
-      btn.className = "w-full text-left px-6 py-5 border border-white/10 hover:border-gold hover:bg-gold/5 transition-all duration-300 text-sm md:text-base font-light tracking-wide text-neutral-300 hover:text-white group";
-      
-      btn.innerHTML = `<span class="inline-block w-6 text-neutral-600 group-hover:text-gold mr-2 text-xs font-mono">0${i+1}</span> ${opt}`;
-      
+      btn.className = "w-full text-left p-5 rounded-2xl border border-gray-100 bg-white hover:border-black hover:shadow-lg transition-all duration-300 text-sm font-semibold text-gray-700 active:scale-[0.98] shadow-sm";
+      btn.innerText = opt;
       btn.onclick = () => {
         socket.emit("submitAnswer", i);
         area.style.pointerEvents = "none";
-        
-        btn.classList.add("bg-white", "text-black", "border-white");
-        btn.classList.remove("text-neutral-300", "hover:bg-gold/5", "hover:border-gold");
+        // Seçim efekti
+        btn.classList.add("bg-black", "text-white", "border-black");
+        btn.classList.remove("bg-white", "text-gray-700");
       };
       area.appendChild(btn);
     });
     area.style.pointerEvents = "auto";
   }
 
-  function showResult(title, msg, icon) {
+  socket.on("youAreEliminated", () => {
+    showScreen("screen-eliminated");
+  });
+
+  socket.on("playerFinishedLate", () => {
+    showScreen("screen-eliminated");
+    document.querySelector("#screen-eliminated h1").innerText = "Tamamlandı";
+    document.querySelector("#screen-eliminated p").innerHTML = "Sıralama hesaplanıyor...<br>Lütfen bekleyin.";
+  });
+
+  // --- OYUN BİTTİ & SIRALAMA ---
+  socket.on("gameOver", (data) => {
+    if(myRole === "admin") {
+      document.getElementById("start-btn").innerText = "TAMAMLANDI";
+      document.getElementById("start-btn").classList.add("bg-red-500");
+      document.getElementById("start-btn").classList.remove("bg-green-500");
+      return;
+    }
+
     showScreen("screen-result");
-    document.getElementById("winner-title").innerText = title;
-    document.getElementById("winner-msg").innerText = msg;
-    document.getElementById("result-icon").innerText = icon;
-  }
+
+    if(data.noWinner) {
+      document.getElementById("winner-title").innerText = "Oyun Sona Erdi";
+      document.getElementById("winner-msg").innerText = "Tüm yarışmacılar elendi.";
+    } else {
+      document.getElementById("winner-title").innerText = "Şampiyon: " + data.winnerName;
+      document.getElementById("winner-msg").innerText = "Yarışma sona erdi.";
+      
+      if (document.getElementById("username").value === data.winnerName) {
+        confetti({ particleCount: 300, spread: 100, origin: { y: 0.6 }, colors: ['#000000', '#aaaaaa'] });
+      }
+    }
+
+    // SIRALAMA TABLOSU
+    const list = document.getElementById("leaderboard-list");
+    list.innerHTML = "";
+
+    data.leaderboard.forEach((p, index) => {
+      let icon = `<span class="text-gray-300 font-bold w-6 text-center text-xs">#${index+1}</span>`;
+      let rowClass = "bg-white";
+      let nameClass = "text-black";
+      let scoreClass = "text-gray-400";
+      
+      if (index === 0) icon = "🥇";
+      if (index === 1) icon = "🥈";
+      if (index === 2) icon = "🥉";
+
+      if (p.name === document.getElementById("username").value) {
+        rowClass = "bg-gray-50 border-l-4 border-black";
+        nameClass = "font-black";
+        scoreClass = "text-black font-bold";
+      }
+
+      const row = document.createElement("div");
+      row.className = `flex items-center justify-between px-6 py-4 border-b border-gray-50 ${rowClass}`;
+      row.innerHTML = `
+        <div class="flex items-center gap-4">
+          <div class="text-lg w-8 text-center">${icon}</div>
+          <div class="text-sm ${nameClass}">${p.name}</div>
+        </div>
+        <div class="text-xs font-mono ${scoreClass}">
+          ${p.score} PUAN
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  });
 
   function showScreen(id) {
-    document.querySelectorAll(".max-w-2xl > div").forEach(div => div.classList.add("hidden"));
+    document.querySelectorAll(".max-w-xl > div").forEach(div => div.classList.add("hidden"));
     const target = document.getElementById(id);
     target.classList.remove("hidden");
     target.classList.add("fade-in");
@@ -365,5 +432,6 @@
 </script>
 </body>
 </html>
+
 
 
